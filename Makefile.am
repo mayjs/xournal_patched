@@ -5,9 +5,7 @@ SUBDIRS = src
 EXTRA_DIST = \
 	autogen.sh \
 	xournal.glade \
-	xournal.gladep \
-	maemo/xournal.desktop \
-	maemo/xournal.service
+	xournal.gladep
 
 install-data-local:
 	@$(NORMAL_INSTALL)
@@ -52,10 +50,3 @@ dist-hook:
 	  fi \
 	fi
 
-if USE_HILDON
-desktopdir = $(datadir)/applications/hildon
-desktop_DATA = maemo/xournal.desktop 
-
-servicedir = $(libdir)/dbus-1.0/services
-service_DATA = maemo/xournal.service
-endif
