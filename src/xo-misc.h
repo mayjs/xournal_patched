@@ -82,7 +82,9 @@ gchar *make_cur_font_name(void);
 void update_font_button(void);
 
 void update_mapping_linkings(int toolno);
+void do_switch_page_and_scroll(int pg, gboolean rescroll, gboolean refresh_all, gdouble scroll_pagefraction);
 void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all);
+
 void set_cur_color(int color_no, guint color_rgba);
 void recolor_temp_text(int color_no, guint color_rgba);
 void process_color_activate(GtkMenuItem *menuitem, int color_no, guint color_rgba);

@@ -289,7 +289,10 @@ create_winMain (void)
   GtkWidget *buttonNextPage;
   GtkWidget *buttonLastPage;
   GtkWidget *toolitem14;
+  GtkWidget *toolitem14_;
   GtkWidget *vseparator4;
+  GtkWidget *vseparator4_;
+  GtkWidget *buttonNewPageAfter;
   GtkWidget *buttonZoomOut;
   GtkWidget *buttonPageWidth;
   GtkWidget *buttonZoomIn;
@@ -1583,6 +1586,19 @@ create_winMain (void)
   vseparator4 = gtk_vseparator_new ();
   gtk_widget_show (vseparator4);
   gtk_container_add (GTK_CONTAINER (toolitem14), vseparator4);
+ 
+  buttonNewPageAfter = (GtkWidget*) gtk_tool_button_new_from_stock ("gtk-add");
+  gtk_widget_show (buttonNewPageAfter);
+  gtk_container_add (GTK_CONTAINER (toolbarMain), buttonNewPageAfter);
+  gtk_tool_item_set_tooltip (GTK_TOOL_ITEM (buttonNewPageAfter), tooltips, _("New page after"), NULL);  
+
+  toolitem14_ = (GtkWidget*) gtk_tool_item_new ();
+  gtk_widget_show (toolitem14_);
+  gtk_container_add (GTK_CONTAINER (toolbarMain), toolitem14_);
+  
+  vseparator4_ = gtk_vseparator_new ();
+  gtk_widget_show (vseparator4_);
+  gtk_container_add (GTK_CONTAINER (toolitem14_), vseparator4_);
 
   buttonZoomOut = (GtkWidget*) gtk_tool_button_new_from_stock ("gtk-zoom-out");
   gtk_widget_show (buttonZoomOut);
@@ -2523,7 +2539,10 @@ create_winMain (void)
                     NULL);
   g_signal_connect ((gpointer) buttonLastPage, "clicked",
                     G_CALLBACK (on_viewLastPage_activate),
-                    NULL);
+                    NULL);                             
+  g_signal_connect ((gpointer) buttonNewPageAfter, "clicked",
+                    G_CALLBACK (on_journalNewPageAfter_activate),
+                    NULL);      
   g_signal_connect ((gpointer) buttonZoomOut, "clicked",
                     G_CALLBACK (on_viewZoomOut_activate),
                     NULL);
@@ -2884,6 +2903,9 @@ create_winMain (void)
   GLADE_HOOKUP_OBJECT (winMain, buttonLastPage, "buttonLastPage");
   GLADE_HOOKUP_OBJECT (winMain, toolitem14, "toolitem14");
   GLADE_HOOKUP_OBJECT (winMain, vseparator4, "vseparator4");
+  GLADE_HOOKUP_OBJECT (winMain, buttonNewPageAfter, "buttonNewPageAfter");
+  GLADE_HOOKUP_OBJECT (winMain, toolitem14_, "toolitem14");
+  GLADE_HOOKUP_OBJECT (winMain, vseparator4_, "vseparator4");
   GLADE_HOOKUP_OBJECT (winMain, buttonZoomOut, "buttonZoomOut");
   GLADE_HOOKUP_OBJECT (winMain, buttonPageWidth, "buttonPageWidth");
   GLADE_HOOKUP_OBJECT (winMain, buttonZoomIn, "buttonZoomIn");
@@ -2988,10 +3010,11 @@ create_papersizeDialog (void)
 
   comboStdSizes = gtk_combo_box_new_text ();
   gtk_widget_show (comboStdSizes);
-  gtk_box_pack_start (GTK_BOX (hbox2), comboStdSizes, TRUE, TRUE, 5);
+  gtk_box_pack_start (GTK_BOX (hbox2), comboStdSizes, TRUE, TRUE, 7);
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("A4"));
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("A4 (landscape)"));
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("A5"));
+  gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("A5 (landscape)"));
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("US Letter"));
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("US Letter (landscape)"));
   gtk_combo_box_append_text (GTK_COMBO_BOX (comboStdSizes), _("Custom"));

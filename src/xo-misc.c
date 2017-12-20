@@ -1399,7 +1399,13 @@ void update_mappings_menu(void)
 
 void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
 {
-  int i, cx, cy;
+  do_switch_page_and_scroll(pg, rescroll, refresh_all, 0.0);
+}
+
+void do_switch_page_and_scroll(int pg, gboolean rescroll, gboolean refresh_all, gdouble scroll_pagefraction)
+{
+  int i, cx, cy, visibleheight;
+  GtkAdjustment *adjust;
   struct Layer *layer;
   GList *list;
   
@@ -1423,8 +1429,11 @@ void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
     gnome_canvas_get_scroll_offsets(canvas, &cx, &cy);
     if (ui.view_continuous == VIEW_MODE_HORIZONTAL)
       cx = ui.cur_page->hoffset*ui.zoom;
-    else
-      cy = ui.cur_page->voffset*ui.zoom;
+    else {
+        adjust = gtk_layout_get_vadjustment (GTK_LAYOUT(canvas));
+		visibleheight = gtk_adjustment_get_page_size (adjust);
+		cy = ui.cur_page->voffset*ui.zoom + visibleheight*scroll_pagefraction;
+	}
     gnome_canvas_scroll_to(canvas, cx, cy);
     
     if (refresh_all) 
@@ -1436,7 +1445,7 @@ void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
 
 void update_page_stuff(void)
 {
-  gchar tmp[10];
+  gchar *tmp;
   GtkComboBox *layerbox;
   int i;
   GList *pglist;
@@ -1501,9 +1510,9 @@ void update_page_stuff(void)
   gtk_spin_button_set_range(spin, 1, journal.npages+1);
     /* npages+1 will be used to create a new page at end */
   gtk_spin_button_set_value(spin, ui.pageno+1);
-  g_snprintf(tmp, 10, _(" of %d"), journal.npages);
+  tmp = g_strdup_printf(_(" of %d"), journal.npages);
   gtk_label_set_text(GTK_LABEL(GET_COMPONENT("labelNumpages")), tmp);
-
+  g_free(tmp);
   layerbox = GTK_COMBO_BOX(GET_COMPONENT("comboLayer"));
   if (ui.layerbox_length == 0) {
     gtk_combo_box_prepend_text(layerbox, _("Background"));
@@ -1514,8 +1523,9 @@ void update_page_stuff(void)
     ui.layerbox_length--;
   }
   while (ui.layerbox_length < ui.cur_page->nlayers+1) {
-    g_snprintf(tmp, 10, _("Layer %d"), ui.layerbox_length++);
+    tmp = g_strdup_printf(_("Layer %d"), ui.layerbox_length++);
     gtk_combo_box_prepend_text(layerbox, tmp);
+    g_free(tmp);
   }
   gtk_combo_box_set_active(layerbox, ui.cur_page->nlayers-1-ui.layerno);
   ui.in_update_page_stuff = FALSE;
@@ -1631,7 +1641,7 @@ void update_toolbar_and_menu(void)
 
 void update_file_name(char *filename)
 {
-  gchar tmp[100], *p;
+  gchar *tmp, *p;
   if (ui.filename != NULL) g_free(ui.filename);
   ui.filename = filename;
   if (filename == NULL) {
@@ -1639,8 +1649,9 @@ void update_file_name(char *filename)
     return;
   }
   p = xo_basename(filename, FALSE);
-  g_snprintf(tmp, 100, _("Xournal - %s"), p);
+  tmp = g_strdup_printf( _("%s - Xournal"), p);
   gtk_window_set_title(GTK_WINDOW (winMain), tmp);
+  g_free(tmp);
   new_mru_entry(filename);
 
   if (p!=filename) {

@@ -170,6 +170,8 @@ gboolean save_journal(const char *filename, gboolean is_auto)
   gzprintf(f, "<?xml version=\"1.0\" standalone=\"no\"?>\n"
      "<xournal version=\"" VERSION "\">\n"
      "<title>Xournal document - see http://math.mit.edu/~auroux/software/xournal/</title>\n");
+  //save last seen page number in file
+  gzprintf(f, "<lastpage number=\"%d\" />\n", ui.pageno); 
   for (pagelist = journal.pages; pagelist!=NULL; pagelist = pagelist->next) {
     pg = (struct Page *)pagelist->data;
     gzprintf(f, "<page width=\"%.2f\" height=\"%.2f\">\n", pg->width, pg->height);
@@ -515,6 +517,7 @@ struct Layer *tmpLayer;
 struct Item *tmpItem;
 char *tmpFilename;
 struct Background *tmpBg_pdf;
+int page_to_load; //NIKO
 
 GError *xoj_invalid(void)
 {
@@ -531,14 +534,27 @@ void xoj_parser_start_element(GMarkupParseContext *context,
   char *tmpbg_filename;
   gdouble val;
   GtkWidget *dialog;
-  
-  if (!strcmp(element_name, "title") || !strcmp(element_name, "xournal")) {
+  if (!strcmp(element_name, "title") || !strcmp(element_name, "xournal")) {  
     if (tmpPage != NULL) {
       *error = xoj_invalid();
       return;
     }
     // nothing special to do
   }
+  else if (!strcmp(element_name, "lastpage")) {
+  	//handle loading the last seen page by NIKO
+  	has_attr=0;
+  	while(*attribute_names!=NULL) {
+  		if (!strcmp(*attribute_names, "number")) {
+  			//printf("pageno\n");
+  			//load number from pageno attribute
+  			page_to_load = atoi(*attribute_values);
+ 		}
+ 		//else *error = xoj_invalid();
+ 		attribute_names++;
+  		attribute_values++;
+ 	}
+  }	
   else if (!strcmp(element_name, "page")) { // start of a page
     if (tmpPage != NULL) {
       *error = xoj_invalid();
@@ -1033,6 +1049,7 @@ gboolean open_journal(char *filename)
   int len;
   gchar *tmpfn, *tmpfn2, *p, *q, *filename_actual;
   gboolean maybe_pdf;
+  page_to_load = -1; //by NIKO
   
   tmpfn = g_strdup_printf("%s.xoj", filename);
   if (ui.autoload_pdf_xoj && g_file_test(tmpfn, G_FILE_TEST_EXISTS) &&
@@ -1198,6 +1215,10 @@ gboolean open_journal(char *filename)
 
   g_free(filename_actual);
   ui.need_autosave = !ui.saved;
+   //if there is a page number saved in the file, jump to that, by NIKO
+   if (page_to_load !=-1) {
+    	do_switch_page(page_to_load, TRUE, FALSE);
+  }
   return TRUE;
 }
 
@@ -1715,11 +1736,14 @@ void save_mru_list(void)
 void init_config_default(void)
 {
   int i, j;
-
+  GtkPaperSize *size;
   DEFAULT_ZOOM = DISPLAY_DPI_DEFAULT/72.0;
   ui.zoom = ui.startup_zoom = 1.0*DEFAULT_ZOOM;
-  ui.default_page.height = 792.0;
-  ui.default_page.width = 612.0;
+  // passing NULL gives system's default paper size
+  size = gtk_paper_size_new (NULL);
+  ui.default_page.height = gtk_paper_size_get_height (size,GTK_UNIT_POINTS);
+  ui.default_page.width = gtk_paper_size_get_width (size,GTK_UNIT_POINTS);
+  gtk_paper_size_free(size);
   ui.default_page.bg->type = BG_SOLID;
   ui.default_page.bg->color_no = COLOR_WHITE;
   ui.default_page.bg->color_rgba = predef_bgcolors_rgba[COLOR_WHITE];

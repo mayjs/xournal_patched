@@ -1111,7 +1111,7 @@ on_journalNewPageAfter_activate        (GtkMenuItem     *menuitem,
   pg = new_page(ui.cur_page);
   journal.pages = g_list_insert(journal.pages, pg, ui.pageno+1);
   journal.npages++;
-  do_switch_page(ui.pageno+1, TRUE, TRUE);
+  do_switch_page_and_scroll(ui.pageno+1, TRUE, TRUE, -1/2.);
 
   prepare_new_undo();
   undo->type = ITEM_NEW_PAGE;
@@ -1131,7 +1131,7 @@ on_journalNewPageEnd_activate          (GtkMenuItem     *menuitem,
   pg = new_page((struct Page *)g_list_last(journal.pages)->data);
   journal.pages = g_list_append(journal.pages, pg);
   journal.npages++;
-  do_switch_page(journal.npages-1, TRUE, TRUE);
+  do_switch_page_and_scroll(journal.npages-1, TRUE, TRUE, -1/2.);
 
   prepare_new_undo();
   undo->type = ITEM_NEW_PAGE;
@@ -1265,16 +1265,18 @@ int papersize_std, papersize_unit;
 double papersize_width, papersize_height;
 gboolean papersize_need_init, papersize_width_valid, papersize_height_valid;
 
+#define STD_SIZE_A5 2
+#define STD_SIZE_A5R 3
+#define STD_SIZE_LETTER 4
+#define STD_SIZE_LETTER_R 5
+#define STD_SIZE_CUSTOM 6
+
 #define STD_SIZE_A4 0
 #define STD_SIZE_A4R 1
-#define STD_SIZE_A5 2
-#define STD_SIZE_LETTER 3
-#define STD_SIZE_LETTER_R 4
-#define STD_SIZE_CUSTOM 5
 
 double unit_sizes[4] = {28.346, 72., 72./DISPLAY_DPI_DEFAULT, 1.};
-double std_widths[STD_SIZE_CUSTOM] =  {595.27, 841.89, 420.94, 612., 792.};
-double std_heights[STD_SIZE_CUSTOM] = {841.89, 595.27, 595.27, 792., 612.};
+double std_widths[STD_SIZE_CUSTOM] =  {595.27, 841.89, 420.92, 595.27 , 612., 792.};
+double std_heights[STD_SIZE_CUSTOM] = {841.89, 595.27, 595.27, 420.92 , 792., 612.};
 double std_units[STD_SIZE_CUSTOM] = {UNIT_CM, UNIT_CM, UNIT_CM, UNIT_IN, UNIT_IN};
 
 void
@@ -2496,7 +2498,7 @@ on_canvas_button_press_event           (GtkWidget       *widget,
   // check whether we're in a page
   get_pointer_coords((GdkEvent *)event, pt);
   set_current_page(pt);
-  
+ 
   // can't paint on the background...
 
   if (ui.cur_layer == NULL && ui.toolno[mapping]!=TOOL_HAND) {
@@ -2539,7 +2541,8 @@ on_canvas_button_press_event           (GtkWidget       *widget,
 
   // process the event
   
-  if (ui.toolno[mapping] == TOOL_HAND) {
+  if (ui.toolno[mapping] == TOOL_HAND || pt[0] < 0 || pt[0] > ui.cur_page->width || pt[1] < 0 || pt[1] > ui.cur_page->height) {
+	// hand tool selected OR outside page
     ui.cur_item_type = ITEM_HAND;
     get_pointer_coords((GdkEvent *)event, ui.hand_refpt);
     ui.hand_refpt[0] += ui.cur_page->hoffset;
