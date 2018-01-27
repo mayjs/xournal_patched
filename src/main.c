@@ -27,6 +27,7 @@
 #include "xo-interface.h"
 #include "xo-support.h"
 static gchar* export_pdf_file;
+static gboolean remove_paperstyle = FALSE;
 static gboolean show_gui = TRUE;
 static gint open_page_nr = 1;
 static gchar **file_arguments = NULL;
@@ -35,6 +36,7 @@ static GOptionEntry entries[] =
 {
   { "page", 'p', 0, G_OPTION_ARG_INT, &open_page_nr, "Jump to Page", "N" },
   { "export-pdf", 'A', 0, G_OPTION_ARG_STRING, &export_pdf_file, "Export document to a PDF file", "FILENAME" },
+  { "remove-paperstyle", 'b', 0, G_OPTION_ARG_NONE, &remove_paperstyle, "Remove the paperstyle of every page in the journal.", NULL},
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &file_arguments, NULL, N_("[FILE]") },
   { NULL }
 };
@@ -45,6 +47,7 @@ static GOptionEntry entries[] =
 #include "xo-file.h"
 #include "xo-paint.h"
 #include "xo-shapes.h"
+#include "xo-print.h"
 
 GtkWidget *winMain;
 GnomeCanvas *canvas;
@@ -137,8 +140,14 @@ void init_stuff (int argc, char *argv[])
     exit(2);
   }
 
+  if(remove_paperstyle) {
+    ui.bg_apply_all_pages = TRUE;
+    process_paperstyle_activate(NULL, RULING_NONE);
+    ui.bg_apply_all_pages = FALSE;
+  }
+
   if(export_pdf_file) {
-     exit(print_to_pdf(export_pdf_file));
+    exit(print_to_pdf(export_pdf_file));
   }
 
   ui.cur_item_type = ITEM_NONE;
