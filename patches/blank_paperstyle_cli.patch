@@ -1,0 +1,72 @@
+From 51b3fe90b64b84d50aa4e8ebd6dcb538c3dfa720 Mon Sep 17 00:00:00 2001
+From: mayjs <johannes.may@udo.edu>
+Date: Sat, 27 Jan 2018 13:00:58 +0100
+Subject: [PATCH] Added CLI-switch for removing the paperstyle (ruling of the
+ pages)
+
+---
+ src/main.c    | 11 ++++++++++-
+ src/xo-misc.c |  3 ++-
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/src/main.c b/src/main.c
+index 15b938d..e034e53 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -27,6 +27,7 @@
+ #include "xo-interface.h"
+ #include "xo-support.h"
+ static gchar* export_pdf_file;
++static gboolean remove_paperstyle = FALSE;
+ static gboolean show_gui = TRUE;
+ static gint open_page_nr = 1;
+ static gchar **file_arguments = NULL;
+@@ -35,6 +36,7 @@ static GOptionEntry entries[] =
+ {
+   { "page", 'p', 0, G_OPTION_ARG_INT, &open_page_nr, "Jump to Page", "N" },
+   { "export-pdf", 'A', 0, G_OPTION_ARG_STRING, &export_pdf_file, "Export document to a PDF file", "FILENAME" },
++  { "remove-paperstyle", 'b', 0, G_OPTION_ARG_NONE, &remove_paperstyle, "Remove the paperstyle of every page in the journal.", NULL},
+   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &file_arguments, NULL, N_("[FILE]") },
+   { NULL }
+ };
+@@ -45,6 +47,7 @@ static GOptionEntry entries[] =
+ #include "xo-file.h"
+ #include "xo-paint.h"
+ #include "xo-shapes.h"
++#include "xo-print.h"
+ 
+ GtkWidget *winMain;
+ GnomeCanvas *canvas;
+@@ -137,8 +140,14 @@ void init_stuff (int argc, char *argv[])
+     exit(2);
+   }
+ 
++  if(remove_paperstyle) {
++    ui.bg_apply_all_pages = TRUE;
++    process_paperstyle_activate(NULL, RULING_NONE);
++    ui.bg_apply_all_pages = FALSE;
++  }
++
+   if(export_pdf_file) {
+-     exit(print_to_pdf(export_pdf_file));
++    exit(print_to_pdf(export_pdf_file));
+   }
+ 
+   ui.cur_item_type = ITEM_NONE;
+diff --git a/src/xo-misc.c b/src/xo-misc.c
+index d111d31..82e1911 100644
+--- a/src/xo-misc.c
++++ b/src/xo-misc.c
+@@ -1856,7 +1856,8 @@ void process_paperstyle_activate(GtkMenuItem *menuitem, int style)
+   GList *pglist;
+   gboolean hasdone, must_upd;
+ 
+-  if (!gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM (menuitem)))
++  // Check for NULL here to allow using this option from the CLI.
++  if (menuitem != NULL && !gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM (menuitem)))
+     return;
+ 
+   if (ui.bg_apply_all_pages)
+-- 
+2.16.0
+
